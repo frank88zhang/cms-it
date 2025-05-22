@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+        <meta charset="utf-8">
+        <title>巧用 Telnet 调试 Dubbo 服务</title>
+
+        <link rel="stylesheet" href="../common/style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&amp;family=Noto+Serif:ital,wght@0,100..900;1,100..900&amp;display=swap"
+                rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&amp;family=Noto+Serif+TC:wght@200..900&amp;family=Noto+Serif:ital,wght@0,100..900;1,100..900&amp;display=swap"
+                rel="stylesheet">
+        <script src="../common/common.js"></script>
+</head>
+
+<body>
+        <article>
+                <h1>每日一技|巧用 Telnet 调试 Dubbo 服务</h1>
+                <h2>楼下小黑哥</h2>
+                <div>
+                        <h2>0x00. 前言</h2>
+                        <p data-pid="D5Mr0-MC">想象这样一个场景，线上某个服务突发异常，导致上游服务调用异常，数据处于中间状态。服务恢复之后，我们需要修复这笔数据至正常状态，怎么办？</p>
+                        <p data-pid="i8LN2YDA">如果仅是简单的服务，涉及少量数据变更，我们可以直接使用
+                                <code>SQL</code>，变更数据状态。但是有些情况下，服务需要联动调用其他系统，变更其他系统数据。这种情况下，变更数据非常麻烦，需要与其他系统开发沟通，整理数据，一起变更。如果涉及还涉及外部系统，数据变更几乎玩不下去了。
+                        </p>
+                        <p data-pid="VA2TwHk9">如果服务接口能重试，重新调用，那么数据变更就交给服务自动去调用即可。这个过程我们需要组装参数，然后调用服务接口。如果你的服务采用
+                                <code>Http</code> 接口，可以使用 <code>Curl</code> 等命令重试。如果你的服务使用 <code>Dubbo</code> ，这就需要使用到
+                                <code>Telnet</code> 命令。</p>
+                        <h2>0x01. telnet 进入 Dubbo 调试</h2>
+                        <p data-pid="StvM2g6Y">通过以下指令，连接 Dubbo 服务。</p>
+                        <div>
+                                <pre><code>telnet IP PORT<br />#例如：<br />telnet localhost 20880</code></pre>
+                        </div>
+                        <blockquote data-pid="KDhmHXPt">Dubbo 版本需要大于 2.0.5，远程调用需要注意网络是否可用</blockquote>
+                        <p data-pid="KCFUOiFh">连上之后，按下<strong>回车键</strong>将会进入以下页面：</p>
+                        <figure data-size="normal"></figure>
+                        <div><img src="file:///C:/Users/Z/Downloads/mx-wc/default/2025-05-09-1746806130/assets/1746806130-171f842f089d9619c67081f9029475e9.jpg"
+                                        alt="" width="640" data-caption="" data-size="normal" data-rawwidth="640"
+                                        data-rawheight="270" data-original-token="v2-19d14c0510e552621b6e33ebd0574902"
+                                        data-original="https://pic3.zhimg.com/v2-7ecf7cb22481440d5ed6b5b332055e38_r.jpg" />
+                        </div>
+                        <p data-pid="5bACjXee">这个界面与 <code>Shell</code> 类似，需要我们输入相关命令。例如：</p>
+                        <figure data-size="normal"></figure>
+                        <div><img src="file:///C:/Users/Z/Downloads/mx-wc/default/2025-05-09-1746806130/assets/1746806130-dfb5ec0a37bbd7c6a94303151a6c971b.jpg"
+                                        alt="" width="602" data-caption="" data-size="normal" data-rawwidth="602"
+                                        data-rawheight="388" data-original-token="v2-5f53f17838a3a4ef2a00e1b6dfa9a5c1"
+                                        data-original="https://pica.zhimg.com/v2-3857ef62d504e9747f51d9558648a274_r.jpg" />
+                        </div>
+                        <p data-pid="nvcXejvv">命令参考手册:<a
+                                        href="https://link.zhihu.com/?target=http%3A//dubbo.apache.org/zh-cn/docs/user/references/telnet.html"
+                                        target="_blank" rel="noopener noreferrer"
+                                        data-za-detail-view-id="1043">http://dubbo.apache.org/zh-cn/docs/user/references/telnet.html</a>。
+                        </p>
+                        <h2>0x02. invoke 执行 Dubbo 方法</h2>
+                        <p data-pid="LUjMNueo">这里我们<strong>重点</strong>介绍 <code>invoke</code> 命令,该命令可以用来执行
+                                <code>Dubbo</code> 服务，调用方式如下：</p>
+                        <div>
+                                <pre><code># 需要提前调用 cd XxxService,使这个服务成为缺省服务<br />invoke xxxMethod(1234, "abcd", {"prop" : "value"})<br /># 调用该服务的方法<br />invoke XxxService.xxxMethod(1234, "abcd", {"prop" : "value"})<br /># 调用全路径服务的方法，推荐使用这种方式，精确执行服务方法。<br />invoke com.xxx.XxxService.xxxMethod(1234, "abcd", {"prop" : "value"})</code></pre>
+                        </div>
+                        <p data-pid="_O5oNzBk">运行结果如下：</p>
+                        <figure data-size="normal"></figure>
+                        <div><img src="file:///C:/Users/Z/Downloads/mx-wc/default/2025-05-09-1746806130/assets/1746806130-2961d527905933e91d55620f90cc1bd4.jpg"
+                                        alt="" width="960" data-caption="" data-size="normal" data-rawwidth="960"
+                                        data-rawheight="214" data-original-token="v2-3b71fd71476c3247d4880f5fad2638ab"
+                                        data-original="https://picx.zhimg.com/v2-29c4354716146da0ada9531896ad9ac3_r.jpg" />
+                        </div>
+                        <blockquote data-pid="jtgZEHil">槽点：mac 平台 <a
+                                        href="https://zhida.zhihu.com/search?content_id=111500417&amp;content_type=Article&amp;match_order=1&amp;q=iterm2&amp;zhida_source=entity"
+                                        target="_blank" rel="noopener noreferrer" data-za-not-track-link="true"
+                                        data-paste-text="true">iterm2 </a> 使用 telnet 命令进入 Dubbo 调试，中文输入将会乱码，使用 SecureCRT
+                                telnet 就不会乱码。感觉是 mac 平台终端问题，不知道各位小伙伴有没有碰到过？有解决办法的小伙伴，欢迎留个言。</blockquote>
+                        <p data-pid="3PRIT5lR"><strong>注意点</strong></p>
+                        <p data-pid="uDJMQW4x"><code>Invoke</code> 命令内部使用 <code>FastJson</code>，将字符串转化为
+                                <code>Json</code> 对象。</p>
+                        <figure data-size="normal"></figure>
+                        <div><img src="file:///C:/Users/Z/Downloads/mx-wc/default/2025-05-09-1746806130/assets/1746806130-11c4ea2d18fa5cce9cb5f41eeeb667e6.jpg"
+                                        alt="" width="1726" data-caption="" data-size="normal" data-rawwidth="1726"
+                                        data-rawheight="426" data-original-token="v2-569f24fda1c73ef270074c0fab103b52"
+                                        data-original="https://picx.zhimg.com/v2-d96421f3ff5a8c9ec8ee31df943c73fd_r.jpg" />
+                        </div>
+                        <blockquote data-pid="E363mzLu">tips: 如果参数为 数组，<code>List</code>，<code>Map</code>，小黑哥有时候想不到怎么转成
+                                Json 字符串。现在知道底层原理了，就好办了。<br />可以先将数组，List，Map 对象参数组装好，然后调用 <strong>FastJson</strong>
+                                <code>JSONObject.toJSONString(array)</code> 得到 <code>json</code>
+                                字符串。<br />不同版本解码方式不一样<br />2.5.3 解码方式： list = (List) JSON.parse("[" + args + "]",
+                                List.class);<br />2.7.0 解码方式： list = JSON.parseArray("[" + args + "]", Object.class);
+                        </blockquote>
+                        <p data-pid="AkAXuKs4">某些 <code>Dubbo</code> 版本 <code>POJO</code> 参数对象需要在 <code>json</code>
+                                字符串中需要指定 <code>class</code>，明确参数类型，例如：</p>
+                        <div>
+                                <pre><code>{<br /> "name": "11",<br /> "age": 12,<br /> "class":"xx.xx.Pojo"<br />}</code></pre>
+                        </div>
+                        <p data-pid="IbJ4_d_G">如果没有传入，将会调用失败，相关问题可以参见这个 <a
+                                        href="https://link.zhihu.com/?target=https%3A//github.com/apache/dubbo/issues/3105"
+                                        target="_blank" rel="noopener noreferrer"
+                                        data-za-detail-view-id="1043">Issue:https://github.com/apache/dubbo/issues/3105</a>。所以如果方法参数为
+                                <code>POJO</code> 对象，最好在 <code>json</code> 中传入 <code>class</code>。</p>
+                        <h2>0x03. select 命令与意外之喜</h2>
+                        <p data-pid="u0PrsPGA"><code>Dubbo</code> 最新版本，如果服务存在多个相同参数的重载方法，且没有使用 <code>class</code>
+                                来明确参数类型，提示用户使用新增的<code>select</code> 命令来选择要调用的方法。</p>
+                        <figure data-size="normal"></figure>
+                        <div><img src="file:///C:/Users/Z/Downloads/mx-wc/default/2025-05-09-1746806130/assets/1746806130-9a891844491ec227bc0fe478b0cfd90d.jpg"
+                                        alt="" width="1270" data-caption="" data-size="normal" data-rawwidth="1270"
+                                        data-rawheight="408" data-original-token="v2-e59f83c0ca378b9a264aacd3e81abdeb"
+                                        data-original="https://pic4.zhimg.com/v2-fec11785fdd8afc9f1c3104a1a0ed831_r.jpg" />
+                        </div>
+                        <p data-pid="SG_zdnvR">小黑哥在测试 <code>select</code> 命令的过程中发现了一个
+                                <strong>Bug</strong>，<code>select</code> 执行未选中的方法。如上，我使用 <code>select 1</code>希望执行
+                                <code>1. hello(HelloRequest)</code>，但是实际上执行的是 <code>2. hello(HelloRequestV2)</code>。当输入
+                                <code>select 2</code> 时，执行结果如下：</p>
+                        <figure data-size="normal"></figure>
+                        <div><img src="file:///C:/Users/Z/Downloads/mx-wc/default/2025-05-09-1746806130/assets/1746806130-b7b1d5d72eb74a361da44543df25e0b5.jpg"
+                                        alt="" width="1238" data-caption="" data-size="normal" data-rawwidth="1238"
+                                        data-rawheight="312" data-original-token="v2-13175e3f96318effc82390480d35d024"
+                                        data-original="https://pica.zhimg.com/v2-efa06d46f9440ca20050fdcc5a55aa54_r.jpg" />
+                        </div>
+                        <p data-pid="rKUrVdnO">这个 <strong>Bug</strong> 详情参考小黑哥提的这个 <strong>issue</strong> <a
+                                        href="https://link.zhihu.com/?target=https%3A//github.com/apache/dubbo/issues/5707"
+                                        target="_blank" rel="noopener noreferrer"
+                                        data-za-detail-view-id="1043">https://github.com/apache/dubbo/issues/5707</a>。这个修复很简单，小黑哥已提交
+                                <strong>PR</strong> 修复该 <strong>Bug</strong>。</p>
+                        <p data-pid="3_zC1yAf">没想到，写这篇文章过程中，还能发现一个 <strong>Bug</strong>，然后成为 <strong>Dubbo
+                                        Committer</strong>，哈哈哈哈。</p>
+                        <figure data-size="normal"></figure>
+                        <h2>0x04. 总结</h2>
+                        <p data-pid="d7NoQBo8">使用 <code>Dubbo Telnet</code> 命令，使用 <code>invoke</code> 命令，可以调用
+                                <code>Dubbo</code> 服务，解决一些生产应急事件。</p>
+                        <p data-pid="R8NoDXCn">但是玩归玩，闹归闹，别把生产开玩笑。</p>
+                        <p data-pid="Odli4sEL">随意使用 <code>invoke</code>
+                                命令还是存在一定危险性，只要知道方法类，服务参数组装规则，就可以远程执行方法，所以生产系统建议按需申请 <code>invoke</code>权限</p>
+                </div>
+        </article>
+
+</body>
+
+</html>
